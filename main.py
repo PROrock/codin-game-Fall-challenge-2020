@@ -7,16 +7,25 @@ def debug(text):
     print(text, file=sys.stderr, flush=True)
 
 
+# class Action:
+#     def __init__(self, id, kind, ingr, price):
+#         self.id = id
+#         self.kind = kind
+#         self.ingr = ingr
+#         self.price = price 
+
 class Action:
-    def __init__(self, id, kind, ingr, price):
+    def __init__(self, id, kind, ingr, price, castable, repeatable):
         self.id = id
         self.kind = kind
         self.ingr = ingr
         self.price = price 
+        self.castable = castable
+        self.repeatable = repeatable
 
     def apply(self, score):
         inventory = list(map(add, score.ingr, self.ingr) )
-        return Action(-1, None, inventory, score.price + self.price)
+        return Action(-1, None, inventory, score.price + self.price, False, False)
 
     def is_valid(self):
         return all((i>=0 for i in self.ingr)) and sum(self.ingr) <= 10
@@ -37,15 +46,15 @@ class Action:
     def to_output(self):
         "REST" if self.kind == "REST" else f"{self.kind} {self.id}"
 
-REST_ACTION = Action(-1, "REST", [0,0,0,0], 0)
+REST_ACTION = Action(-1, "REST", [0,0,0,0], 0, False, False)
 
 class Recipe(Action):
     def __init__(self, id, ingr, price):
-        super().__init__(id, "BREW", ingr, price)
+        super().__init__(id, "BREW", ingr, price, False, False)
 
 class Spell(Action):
     def __init__(self, id, kind, ingr, price, castable, repeatable):
-        super().__init__(id, kind, ingr, price)
+        super().__init__(id, kind, ingr, price, castable, repeatable)
         self.castable = castable 
         self.repeatable = repeatable
     # def __repr__(self):
@@ -66,7 +75,7 @@ class State:
     def __init__(self, score, recipes, spells):
         self.score = score
         self.recipes = recipes
-        self.spells = spells
+        self.spells = spells # non-casted spell ids
     def __repr__(self):
         return (f'{self.__class__.__name__}('
                 f'{self.score!r}, \nspells={self.spells!r})')
@@ -92,25 +101,21 @@ class Node:
         expanded = []
         # recipes - not needed - cannot help me with another recipe
         # spells
-        for i, spell in enumerate(self.state.spells):
-            if not spell.castable:
-                continue 
-
+        for i, spell_id in enumerate(self.state.spells):
+            spell = actions[spell_id]
             new_score = spell.apply(self.state.score)
             # print(f"New score {new_score}", file=sys.stderr, flush=True)
             if new_score.is_valid():
-                copied_spells = copy.deepcopy(self.state.spells)
-                copied_spells[i].castable = False            
+                copied_spells = copy.copy(self.state.spells)
+                copied_spells.remove(spell_id) 
                 # debug(copied_spells[i])
-                expanded.append(Node(State(new_score, recipes, copied_spells), self.f+1, copy.deepcopy(self.history) + [spell]))
+                expanded.append(Node(State(new_score, recipes, copied_spells), self.f+1, copy.copy(self.history) + [spell_id]))
 
         # rest
-        if any([not s.castable for s in self.state.spells]):
-            copied_spells = copy.deepcopy(self.state.spells)
-            for s in copied_spells:
-                s.castable = True
+        if len(self.state.spells) < len(spells):
+            copied_spells = [s.id for s in spells]
             expanded.append(Node(State(self.state.score, recipes, copied_spells), self.f+1, 
-                                 copy.deepcopy(self.history) + [REST_ACTION]))
+                                 copy.copy(self.history) + [-1]))
         # debug(f"Expanded {self}")
         # debug(f"Expanded {self} to {expanded}")
         debug(self.f)
@@ -123,6 +128,7 @@ class Search:
         self.target = target
 
     def search(self):
+        curr_level = 0
         q = [Node(self.state, 0, [])]
         while len(q) > 0:
             node = q.pop(0) ## take first element -> breadth-first
@@ -131,6 +137,10 @@ class Search:
                 return node
             expanded = node.expand()
             q.extend(expanded) ## put at the end
+
+            if node.f > curr_level:
+                curr_level = node.f
+                debug(curr_level)
         return None
 
 
@@ -172,7 +182,7 @@ while True:
     recipes = []
     spells = []
     tome_spells = []
-    #actions = {}
+    actions = {}
 
     action_count = int(input())  # the number of spells and recipes in play
     for i in range(action_count):
@@ -201,7 +211,7 @@ while True:
         castable = castable != "0"
         repeatable = repeatable != "0"
 
-        #actions[action_id] = Action(action_id, action_type, [delta_0,delta_1,delta_2,delta_3], price, castable, repeatable)
+        actions[action_id] = Action(action_id, action_type, [delta_0,delta_1,delta_2,delta_3], price, castable, repeatable)
         if action_type == 'BREW':
             recipes.append(Recipe(action_id, [delta_0,delta_1,delta_2,delta_3], price))
         elif action_type == 'CAST':
@@ -226,7 +236,7 @@ while True:
     # Write an action using print
     # To debug: print("Debug messages...", file=sys.stderr, flush=True)
 
-    node = Search(State(my_score, recipes, spells), recipes[0]).search()
+    node = Search(State(my_score, recipes, {s.id for s in spells if s.castable}), recipes[0]).search()
 
     r = best_recipe()
     debug(f"Best is {r}")
