@@ -14,6 +14,22 @@ def debug(text):
 #         self.ingr = ingr
 #         self.price = price 
 
+class Ingr:
+    def __init__(self, ingr):
+        self.ingr = ingr
+    def apply(self, other):
+        inventory = list(map(add, other.ingr, self.ingr))
+        return Ingr(inventory)
+    def is_valid(self):
+        return all((i>=0 for i in self.ingr)) and sum(self.ingr) <= 10
+    def __eq__(self, other):
+        return (isinstance(other, self.__class__)
+            and self.__dict__ == other.__dict__)
+    def __hash__(self):
+        return hash((val for _,val in self.__dict__))
+
+    
+
 class Action:
     def __init__(self, id, kind, ingr, price, castable, repeatable):
         self.id = id
@@ -45,6 +61,13 @@ class Action:
 
     def to_output(self):
         "REST" if self.kind == "REST" else f"{self.kind} {self.id}"
+    
+    def __eq__(self, other):
+        return (isinstance(other, self.__class__)
+            and self.__dict__ == other.__dict__)
+    def __hash__(self):
+        return hash((val for _,val in self.__dict__))
+
 
 REST_ACTION = Action(-1, "REST", [0,0,0,0], 0, False, False)
 
@@ -79,8 +102,11 @@ class State:
     def __repr__(self):
         return (f'{self.__class__.__name__}('
                 f'{self.score!r}, \nspells={self.spells!r})')
-
-
+    def __eq__(self, other):
+        return (isinstance(other, self.__class__)
+            and self.__dict__ == other.__dict__)
+    def __hash__(self):
+        return hash((val for _,val in self.__dict__))
 
 class Node:
     def __init__(self, state, f, history):
@@ -118,25 +144,34 @@ class Node:
                                  copy.copy(self.history) + [-1]))
         # debug(f"Expanded {self}")
         # debug(f"Expanded {self} to {expanded}")
-        debug(self.f)
+        # debug(self.f)
         return expanded
 
 # seed=-4572190914680882200
 class Search:
-    def __init__(self, state, target):
+    def __init__(self, state, targets):
         self.state = state
-        self.target = target
+        self.targets = targets
 
     def search(self):
+        found = {}
+        visited = set()
         curr_level = 0
         q = [Node(self.state, 0, [])]
         while len(q) > 0:
             node = q.pop(0) ## take first element -> breadth-first
-            if node.satisfies(self.target):
-                debug(f"Satisfied node: {node}")
-                return node
+            if node.state in visited:
+                # debug(f"Already visited state {node.state}")
+                continue
+            for target in self.targets:
+                if node.satisfies(target) and target.id not in found.keys():
+                    debug(f"Satisfied node: {node}")
+                    found[target.id] = node
+                    if len(found) == len(self.targets):
+                        return found
             expanded = node.expand()
             q.extend(expanded) ## put at the end
+            visited.add(node.state)
 
             if node.f > curr_level:
                 curr_level = node.f
@@ -158,13 +193,27 @@ def best_recipe():
     for recipe in recipes:
         new_score = recipe.apply(my_score)
         # print(f"New score {new_score}", file=sys.stderr, flush=True)
-        ratio = recipe.price / recipe.n_turns(my_score)
+        n_turns = recipe.n_turns(my_score)
+        # n_turns = 
+        ratio = recipe.price / n_turns
 
         if not best or ratio > best_ratio:
             best = recipe
             best_ratio = ratio
             print(f"Best is now {best} with ratio {ratio}", file=sys.stderr, flush=True)
     return best
+
+# slow, innefficient to run the search from the beginningm when it is the same space to search
+# def best():
+#     shortest_paths = [Search(State(my_score, recipes, {s.id for s in spells if s.castable}), r).search() for r in recipes]
+#     ratios = [r.price/node.f for r, node in zip(recipes, shortest_paths)]
+#     return min(enumerate(shortest_paths), key=lambda i:ratios[i]).history[0]
+def best():
+    shortest_paths = Search(State(my_score, recipes, {s.id for s in spells if s.castable}), recipes).search()
+    ratios = {r.id:(r.price/shortest_paths[r.id].f) for r in recipes}
+    min_id = min((r.id for r in recipes), key=lambda id:ratios[id])
+    return shortest_paths[min_id].history[0]
+
 
 def best_spell():
     for spell in spells:
@@ -236,17 +285,18 @@ while True:
     # Write an action using print
     # To debug: print("Debug messages...", file=sys.stderr, flush=True)
 
-    node = Search(State(my_score, recipes, {s.id for s in spells if s.castable}), recipes[0]).search()
+    # node = Search(State(my_score, recipes, {s.id for s in spells if s.castable}), recipes[0]).search()
+    # r = best_recipe()
+    # debug(f"Best is {r}")
 
-    r = best_recipe()
-    debug(f"Best is {r}")
+    # # first try to brew if we can
+    # action = possible_recipe()
+    # if not action:
+    #     action = best_spell()
+    # if not action:
+    #     action = "REST zzZZ"
 
-    # first try to brew if we can
-    action = possible_recipe()
-    if not action:
-        action = best_spell()
-    if not action:
-        action = "REST zzZZ"
+    action = best().to_output()
 
     # in the first league: BREW <id> | WAIT; later: BREW <id> | CAST <id> [<times>] | LEARN <id> | REST | WAIT
     print(action)
