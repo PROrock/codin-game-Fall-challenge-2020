@@ -6,14 +6,6 @@ import copy
 def debug(text):
     print(text, file=sys.stderr, flush=True)
 
-
-# class Action:
-#     def __init__(self, id, kind, ingr, price):
-#         self.id = id
-#         self.kind = kind
-#         self.ingr = ingr
-#         self.price = price 
-
 class Ingr:
     def __init__(self, ingr):
         self.ingr = ingr
@@ -27,6 +19,8 @@ class Ingr:
             and self.__dict__ == other.__dict__)
     def __hash__(self):
         return hash((val for _,val in self.__dict__))
+    def __repr__(self):
+        return f"{self.ingr}"
 
     
 
@@ -39,12 +33,12 @@ class Action:
         self.castable = castable
         self.repeatable = repeatable
 
-    def apply(self, score):
-        inventory = list(map(add, score.ingr, self.ingr) )
-        return Action(-1, None, inventory, score.price + self.price, False, False)
+    # def apply(self, score):
+        # inventory = list(map(add, score.ingr, self.ingr) )
+        # return Action(-1, None, inventory, score.price + self.price, False, False)
 
-    def is_valid(self):
-        return all((i>=0 for i in self.ingr)) and sum(self.ingr) <= 10
+    # def is_valid(self):
+        # return all((i>=0 for i in self.ingr)) and sum(self.ingr) <= 10
 
     def __repr__(self):
         return (f'{self.__class__.__name__[0]}('
@@ -60,7 +54,7 @@ class Action:
         return n
 
     def to_output(self):
-        "REST" if self.kind == "REST" else f"{self.kind} {self.id}"
+        return "REST" if self.kind == "REST" else f"{self.kind} {self.id}"
     
     def __eq__(self, other):
         return (isinstance(other, self.__class__)
@@ -83,25 +77,15 @@ class Spell(Action):
     # def __repr__(self):
         # return f"{super().__repr__()}, cast={self.castable}"
 
-# class State:
-#     def __init__(self, score, recipes, spells):
-#         self.score = score
-#         self.recipes = recipes
-#         self.spells = spells
-#     def __repr__(self):
-#         return (f'{self.__class__.__name__}('
-#                 f'{self.score!r}, \nspells={self.spells!r})')
-
-
 
 class State:
-    def __init__(self, score, recipes, spells):
-        self.score = score
-        self.recipes = recipes
+    def __init__(self, ingr, spells):
+        self.ingr = ingr
+        # self.recipes = recipes
         self.spells = spells # non-casted spell ids
     def __repr__(self):
         return (f'{self.__class__.__name__}('
-                f'{self.score!r}, \nspells={self.spells!r})')
+                f'{self.ingr!r}, \nspells={self.spells!r})')
     def __eq__(self, other):
         return (isinstance(other, self.__class__)
             and self.__dict__ == other.__dict__)
@@ -117,11 +101,11 @@ class Node:
     def __repr__(self):
         # {self.state!r}, 
         return (f'{self.__class__.__name__}('
-                f'{self.f!r}, {self.state.score.ingr}\n{self.history!r})')
+                f'{self.f!r}, {self.state.ingr!r}\n{self.history!r})')
 
     def satisfies(self, target):
-        new_score = self.state.score.apply(target)
-        return new_score.is_valid()
+        new_ingr = self.state.ingr.apply(target.ingr)
+        return new_ingr.is_valid()
 
     def expand(self):
         expanded = []
@@ -129,18 +113,19 @@ class Node:
         # spells
         for i, spell_id in enumerate(self.state.spells):
             spell = actions[spell_id]
-            new_score = spell.apply(self.state.score)
-            # print(f"New score {new_score}", file=sys.stderr, flush=True)
-            if new_score.is_valid():
+            new_ingr = spell.ingr.apply(self.state.ingr)
+            # print(f"New ingr {new_ingr}", file=sys.stderr, flush=True)
+            if new_ingr.is_valid():
                 copied_spells = copy.copy(self.state.spells)
                 copied_spells.remove(spell_id) 
                 # debug(copied_spells[i])
-                expanded.append(Node(State(new_score, recipes, copied_spells), self.f+1, copy.copy(self.history) + [spell_id]))
-
+                expanded.append(Node(State(new_ingr, copied_spells), self.f+1, 
+                                     copy.copy(self.history) + [spell_id]))
+        
         # rest
         if len(self.state.spells) < len(spells):
             copied_spells = [s.id for s in spells]
-            expanded.append(Node(State(self.state.score, recipes, copied_spells), self.f+1, 
+            expanded.append(Node(State(self.state.ingr, copied_spells), self.f+1, 
                                  copy.copy(self.history) + [-1]))
         # debug(f"Expanded {self}")
         # debug(f"Expanded {self} to {expanded}")
@@ -157,9 +142,11 @@ class Search:
         found = {}
         visited = set()
         curr_level = 0
+        n_level_nodes = 0
         q = [Node(self.state, 0, [])]
         while len(q) > 0:
             node = q.pop(0) ## take first element -> breadth-first
+            n_level_nodes+=1
             if node.state in visited:
                 # debug(f"Already visited state {node.state}")
                 continue
@@ -175,33 +162,9 @@ class Search:
 
             if node.f > curr_level:
                 curr_level = node.f
-                debug(curr_level)
+                debug(f"{curr_level}: {n_level_nodes} processed")
         return None
 
-
-def possible_recipe():
-    for recipe in recipes:
-        new_score = recipe.apply(my_score)
-        # print(f"New score {new_score}", file=sys.stderr, flush=True)
-        if new_score.is_valid():
-            return f"BREW {recipe.id}"
-    return None
-
-def best_recipe():
-    best = None
-    best_ratio = 0
-    for recipe in recipes:
-        new_score = recipe.apply(my_score)
-        # print(f"New score {new_score}", file=sys.stderr, flush=True)
-        n_turns = recipe.n_turns(my_score)
-        # n_turns = 
-        ratio = recipe.price / n_turns
-
-        if not best or ratio > best_ratio:
-            best = recipe
-            best_ratio = ratio
-            print(f"Best is now {best} with ratio {ratio}", file=sys.stderr, flush=True)
-    return best
 
 # slow, innefficient to run the search from the beginningm when it is the same space to search
 # def best():
@@ -209,21 +172,13 @@ def best_recipe():
 #     ratios = [r.price/node.f for r, node in zip(recipes, shortest_paths)]
 #     return min(enumerate(shortest_paths), key=lambda i:ratios[i]).history[0]
 def best():
-    shortest_paths = Search(State(my_score, recipes, {s.id for s in spells if s.castable}), recipes).search()
+    shortest_paths = Search(State(Ingr(my_score.ingr), {s.id for s in spells if s.castable}), recipes).search()
     ratios = {r.id:(r.price/shortest_paths[r.id].f) for r in recipes}
-    min_id = min((r.id for r in recipes), key=lambda id:ratios[id])
-    return shortest_paths[min_id].history[0]
-
-
-def best_spell():
-    for spell in spells:
-        if not spell.castable:
-            continue
-        new_score = spell.apply(my_score)
-        # print(f"New score {new_score}", file=sys.stderr, flush=True)
-        if new_score.is_valid():
-            return f"CAST {spell.id}"
-    return None
+    max_id = max((r.id for r in recipes), key=lambda id:ratios[id])
+    debug(f"max ratio {ratios[max_id]} has recipe id {max_id}")
+    action_id = shortest_paths[max_id].history[0]
+    debug(f"Action id is {action_id}")
+    return actions[action_id]
 
 
 # game loop
@@ -231,7 +186,7 @@ while True:
     recipes = []
     spells = []
     tome_spells = []
-    actions = {}
+    actions = {REST_ACTION.id:REST_ACTION}
 
     action_count = int(input())  # the number of spells and recipes in play
     for i in range(action_count):
@@ -260,13 +215,14 @@ while True:
         castable = castable != "0"
         repeatable = repeatable != "0"
 
-        actions[action_id] = Action(action_id, action_type, [delta_0,delta_1,delta_2,delta_3], price, castable, repeatable)
+        ingr = Ingr([delta_0,delta_1,delta_2,delta_3])
+        actions[action_id] = Action(action_id, action_type, ingr, price, castable, repeatable)
         if action_type == 'BREW':
-            recipes.append(Recipe(action_id, [delta_0,delta_1,delta_2,delta_3], price))
+            recipes.append(Recipe(action_id, ingr, price))
         elif action_type == 'CAST':
-            spells.append(Spell(action_id, action_type, [delta_0,delta_1,delta_2,delta_3], price, castable, repeatable))
+            spells.append(Spell(action_id, action_type, ingr, price, castable, repeatable))
         # elif action_type == 'LEARN':
-            # tome_spells.append(Spell(action_id, action_type, [delta_0,delta_1,delta_2,delta_3], price, castable))
+            # tome_spells.append(Spell(action_id, action_type, ingr, price, castable))
 
     # for r in recipes:
         # print(r, file=sys.stderr, flush=True)
@@ -282,21 +238,11 @@ while True:
     #     inv_0, inv_1, inv_2, inv_3, score = [int(j) for j in input().split()]
 
 
-    # Write an action using print
-    # To debug: print("Debug messages...", file=sys.stderr, flush=True)
-
-    # node = Search(State(my_score, recipes, {s.id for s in spells if s.castable}), recipes[0]).search()
-    # r = best_recipe()
-    # debug(f"Best is {r}")
-
-    # # first try to brew if we can
-    # action = possible_recipe()
-    # if not action:
-    #     action = best_spell()
-    # if not action:
-    #     action = "REST zzZZ"
-
-    action = best().to_output()
+    best_action = best()
+    # debug(f"best action is {best_action}")
+    # for a in actions.items():
+        # debug(a)
+    output = best_action.to_output()
 
     # in the first league: BREW <id> | WAIT; later: BREW <id> | CAST <id> [<times>] | LEARN <id> | REST | WAIT
-    print(action)
+    print(output)
