@@ -1,8 +1,9 @@
-import sys
-import math
-from operator import add
 import copy
 from collections import deque
+from operator import add
+
+import sys
+
 
 def debug(text):
     print(text, file=sys.stderr, flush=True)
@@ -23,7 +24,6 @@ class Ingr:
     def __repr__(self):
         return f"{self.ingr}"
 
-    
 
 class Action:
     def __init__(self, id, kind, ingr, price, castable, repeatable, tome_index, tax_count):
@@ -47,14 +47,14 @@ class Action:
         return (f'{self.__class__.__name__[0]}('
                 f'{self.kind} {self.id}, {self.ingr!r}, {self.price})')
 
-    # todo just approx now - proper search would be better
-    def n_turns(self, score):
-        n = 0
-        for i in range(len(self.ingr)):
-            n += max(score.ingr[i] - self.ingr[i], 0)*(i+1)
-            print(f"N {i}: diff is {score.ingr[i] - self.ingr[i]}, n is {n}", file=sys.stderr, flush=True)
-        print(f"N_turns {score} to {self} takes ~ {n} turns", file=sys.stderr, flush=True)
-        return n
+    # # todo just approx now - proper search would be better
+    # def n_turns(self, score):
+    #     n = 0
+    #     for i in range(len(self.ingr)):
+    #         n += max(score.ingr[i] - self.ingr[i], 0)*(i+1)
+    #         print(f"N {i}: diff is {score.ingr[i] - self.ingr[i]}, n is {n}", file=sys.stderr, flush=True)
+    #     print(f"N_turns {score} to {self} takes ~ {n} turns", file=sys.stderr, flush=True)
+    #     return n
 
     def to_output(self):
         return "REST" if self.kind == "REST" else f"{self.kind} {self.id}"
@@ -68,6 +68,7 @@ class Action:
 
 REST_ACTION = Action(-1, "REST", [0,0,0,0], 0, False, False, -1, 0)
 
+# todo use only Action class - but won't speed up the code I think
 class Recipe(Action):
     def __init__(self, id, ingr, price):
         super().__init__(id, "BREW", ingr, price, False, False, -1, 0)
@@ -85,7 +86,7 @@ class State:
     def __init__(self, ingr, spells, tome):
         self.ingr = ingr
         # self.recipes = recipes
-        self.spells = spells # non-casted spell ids
+        self.spells = spells  # non-casted spell ids
         self.tome = tome
     def __repr__(self):
         return (f'{self.__class__.__name__}('
@@ -173,6 +174,7 @@ class Search:
                 # debug(f"Already visited state {node.state}")
                 continue
             for target in self.targets:
+                # todo consider just removing done goal from the targets, might be slightly quicker
                 if node.satisfies(target) and target.id not in found.keys():
                     debug(f"Satisfied node: {node}")
                     found[target.id] = node
