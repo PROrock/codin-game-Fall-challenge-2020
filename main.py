@@ -145,9 +145,7 @@ class Node:
             copied_spells = {s.id for s in spells}
             expanded.append(Node(State(self.state.ingr, copied_spells, self.state.tome),
                                  self.f+1, copy.copy(self.history) + [REST_ACTION.id]))
-        # debug(f"Expanded {self}")
         # debug(f"Expanded {self} to {expanded}")
-        # debug(self.f)
         return expanded
 
 # seed=-4572190914680882200
@@ -162,8 +160,14 @@ class Search:
         curr_level = 0
         n_level_nodes = 0
         q = deque([Node(self.state, 0, [])])
+
         while len(q) > 0:
             node = q.popleft() ## take first element -> breadth-first
+            if node.f > curr_level:
+                debug(f"{curr_level}: {n_level_nodes} processed")
+                curr_level = node.f
+                n_level_nodes = 0
+
             n_level_nodes+=1
             if node.state in visited:
                 # debug(f"Already visited state {node.state}")
@@ -177,11 +181,6 @@ class Search:
             expanded = node.expand()
             q.extend(expanded) ## put at the end
             visited.add(node.state)
-
-            if node.f > curr_level:
-                debug(f"{curr_level}: {n_level_nodes-1} processed")
-                curr_level = node.f
-                n_level_nodes = 1
         return None
 
 
