@@ -170,22 +170,24 @@ class Search:
         while len(q) > 0:
             node = q.popleft() ## take first element -> breadth-first
             if node.f > curr_level:
-                debug(f"{curr_level}: {n_level_nodes} processed")
+                # debug(f"{curr_level}: {n_level_nodes} processed")
                 curr_level = node.f
                 n_level_nodes = 0
-                # so it ends sometime
-                if node.f > MAX_LEVEL:
-                    return found
-            curr_time=timeit.default_timer()
-            if (curr_time-start_time) > TIME_THRES:
-                debug("Time's up!")
-                found[TIMEOUT_KEY] = TIMEOUT_KEY
-                return found
+                # so it ends sometime - just for profiling
+                # if node.f > MAX_LEVEL:
+                #     return found
 
             n_level_nodes+=1
             if node.state in visited:
                 # debug(f"Already visited state {node.state}")
                 continue
+
+            curr_time=timeit.default_timer()
+            if (curr_time-start_time) > TIME_THRES:
+                debug(f"Time's up! Current level: {curr_level}")
+                found[TIMEOUT_KEY] = TIMEOUT_KEY
+                return found
+
             for target in self.targets:
                 # todo consider just removing done goal from the targets, might be slightly quicker
                 if node.satisfies(target) and target.id not in found.keys():
