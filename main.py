@@ -5,11 +5,11 @@ from operator import add
 
 import sys
 
-MAX_LEVEL = 6
+MAX_LEVEL = 20
 # 40ms in second fraction (hopefully)
 TIME_THRES = 40*0.001
 TIMEOUT_KEY = -6
-MAX_SPELL_SIZE = 22
+MAX_SPELL_SIZE = 17
 
 def debug(text):
     print(text, file=sys.stderr, flush=True)
@@ -196,7 +196,8 @@ class Search:
             expanded = node.expand()
             q.extend(expanded) ## put at the end
             visited.add(node.state)
-        return None
+        debug("Cannot find a way to do some recipe :-(")
+        return found
 
 def possible_recipe():
     for recipe in recipes:
@@ -226,7 +227,7 @@ def best():
     tome.sort(key=lambda id:actions[id].tome_index)
     shortest_paths = Search(State(Ingr(my_score.ingr), {s.id for s in spells if s.castable}, tome), recipes).search()
 
-    if TIMEOUT_KEY in shortest_paths.keys():
+    if not shortest_paths or TIMEOUT_KEY in shortest_paths.keys():
         if len(spells) < MAX_SPELL_SIZE:
             free_tome = tome[0]
             return free_tome
@@ -235,10 +236,11 @@ def best():
             return recipe_id if recipe_id is not None else valid_spell()
 
 
-    ratios = {r.id:(r.price/shortest_paths[r.id].f) for r in recipes}
-    max_id = max((r.id for r in recipes), key=lambda id:ratios[id])
+    ratios = {r.id:(r.price/shortest_paths[r.id].f) for r in recipes if r.id in shortest_paths.keys()}
+    max_id = max((r.id for r in ratios.keys()), key=lambda id:ratios[id])
     debug(f"max ratio {ratios[max_id]} has recipe id {max_id}")
-    action_id = shortest_paths[max_id].history[0]
+    best_node = shortest_paths[max_id]
+    action_id = best_node.history[0] if len(best_node.history) > 0 else max_id
     debug(f"Action id is {action_id}")
     return action_id
 
