@@ -4,6 +4,7 @@ from operator import add
 
 import sys
 
+MAX_LEVEL=6
 
 def debug(text):
     print(text, file=sys.stderr, flush=True)
@@ -17,8 +18,7 @@ class Ingr:
     def is_valid(self):
         return all((i>=0 for i in self.ingr)) and sum(self.ingr) <= 10
     def __eq__(self, other):
-        return (isinstance(other, self.__class__)
-            and self.__dict__ == other.__dict__)
+        return self.__dict__ == other.__dict__
     def __hash__(self):
         return hash((val for _,val in self.__dict__))
     def __repr__(self):
@@ -92,8 +92,8 @@ class State:
         return (f'{self.__class__.__name__}('
                 f'{self.ingr!r}, \nspells={self.spells!r})\ntome={self.tome}')
     def __eq__(self, other):
-        return (isinstance(other, self.__class__)
-            and self.__dict__ == other.__dict__)
+        # return self.ingr == other.ingr and self.spells == other.spells and self.tome == other.tome
+        return self.__dict__ == other.__dict__
     def __hash__(self):
         return hash((val for _,val in self.__dict__))
 
@@ -168,6 +168,9 @@ class Search:
                 debug(f"{curr_level}: {n_level_nodes} processed")
                 curr_level = node.f
                 n_level_nodes = 0
+                # so it ends sometime
+                if node.f > MAX_LEVEL:
+                    return found
 
             n_level_nodes+=1
             if node.state in visited:
