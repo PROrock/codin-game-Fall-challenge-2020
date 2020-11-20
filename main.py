@@ -237,7 +237,7 @@ def best():
 
 
     ratios = {r.id:(r.price/shortest_paths[r.id].f) for r in recipes if r.id in shortest_paths.keys()}
-    max_id = max((r.id for r in ratios.keys()), key=lambda id:ratios[id])
+    max_id = max((r_id for r_id in ratios.keys()), key=lambda id:ratios[id])
     debug(f"max ratio {ratios[max_id]} has recipe id {max_id}")
     best_node = shortest_paths[max_id]
     action_id = best_node.history[0] if len(best_node.history) > 0 else max_id
@@ -267,6 +267,7 @@ while True:
         # castable: in the first league: always 0; later: 1 if this is a castable player spell
         # repeatable: for the first two leagues: always 0; later: 1 if this is a repeatable player spell
         action_id, action_type, delta_0, delta_1, delta_2, delta_3, price, tome_index, tax_count, castable, repeatable = input().split()
+        # debug(" ".join((action_id, action_type, delta_0, delta_1, delta_2, delta_3, price, tome_index, tax_count, castable, repeatable)))
         action_id = int(action_id)
         delta_0 = int(delta_0)
         delta_1 = int(delta_1)
@@ -289,13 +290,15 @@ while True:
         # elif action_type == 'LEARN':
             # tome_spells.append(Spell(action_id, action_type, ingr, price, castable))
 
-    # for r in recipes:
-        # print(r, file=sys.stderr, flush=True)
+    # for a in actions.values():
+    #     debug(a)
 
 
     score_line = [int(j) for j in input().split()]
+    # debug(score_line)
     my_score = Recipe(-1, score_line[:4], score_line[4])
     score_line = [int(j) for j in input().split()]
+    # debug(score_line)
     opp_score = Recipe(-1, score_line[:4], score_line[4])
     # for i in range(2):
     #     # inv_0: tier-0 ingredients in inventory
