@@ -1,10 +1,15 @@
 import copy
+import timeit
 from collections import deque
 from operator import add
 
 import sys
 
-MAX_LEVEL=6
+MAX_LEVEL = 6
+# 40ms in second fraction (hopefully)
+TIME_THRES = 40*0.001
+TIMEOUT_KEY = -6
+MAX_SPELL_SIZE = 22
 
 def debug(text):
     print(text, file=sys.stderr, flush=True)
@@ -158,9 +163,9 @@ class Search:
     def search(self):
         found = {}
         visited = set()
-        curr_level = 0
+        curr_level = 1
         n_level_nodes = 0
-        q = deque([Node(self.state, 0, [])])
+        q = deque([Node(self.state, 1, [])])
 
         while len(q) > 0:
             node = q.popleft() ## take first element -> breadth-first
@@ -171,6 +176,11 @@ class Search:
                 # so it ends sometime
                 if node.f > MAX_LEVEL:
                     return found
+            curr_time=timeit.default_timer()
+            if (curr_time-start_time) > TIME_THRES:
+                debug("Time's up!")
+                found[TIMEOUT_KEY] = TIMEOUT_KEY
+                return found
 
             n_level_nodes+=1
             if node.state in visited:
@@ -188,6 +198,23 @@ class Search:
             visited.add(node.state)
         return None
 
+def possible_recipe():
+    for recipe in recipes:
+        new_score = recipe.ingr.apply(my_score)
+        # print(f"New score {new_score}", file=sys.stderr, flush=True)
+        if new_score.is_valid():
+            return recipe.id
+    return None
+
+def valid_spell():
+    for spell in spells:
+        if not spell.castable:
+            continue
+        new_score = spell.ingr.apply(my_score)
+        # print(f"New score {new_score}", file=sys.stderr, flush=True)
+        if new_score.is_valid():
+            return spell.id
+    return REST_ACTION.id
 
 # slow, innefficient to run the search from the beginningm when it is the same space to search
 # def best():
@@ -198,17 +225,27 @@ def best():
     tome = [a.id for a in actions.values() if a.kind == "LEARN"]
     tome.sort(key=lambda id:actions[id].tome_index)
     shortest_paths = Search(State(Ingr(my_score.ingr), {s.id for s in spells if s.castable}, tome), recipes).search()
-    
+
+    if TIMEOUT_KEY in shortest_paths.keys():
+        if len(spells) < MAX_SPELL_SIZE:
+            free_tome = tome[0]
+            return free_tome
+        else:
+            recipe_id = possible_recipe()
+            return recipe_id if recipe_id is not None else valid_spell()
+
+
     ratios = {r.id:(r.price/shortest_paths[r.id].f) for r in recipes}
     max_id = max((r.id for r in recipes), key=lambda id:ratios[id])
     debug(f"max ratio {ratios[max_id]} has recipe id {max_id}")
     action_id = shortest_paths[max_id].history[0]
     debug(f"Action id is {action_id}")
-    return actions[action_id]
+    return action_id
 
 
 # game loop
 while True:
+    start_time = timeit.default_timer()
     recipes = []
     spells = []
     tome_spells = []
@@ -264,7 +301,8 @@ while True:
     #     inv_0, inv_1, inv_2, inv_3, score = [int(j) for j in input().split()]
 
 
-    best_action = best()
+    best_action_id = best()
+    best_action = actions[best_action_id]
     # debug(f"best action is {best_action}")
     # for a in actions.items():
         # debug(a)
