@@ -90,7 +90,6 @@ class Node:
         self.history = history
 
     def __repr__(self):
-        # {self.state!r}, 
         return (f'{self.__class__.__name__}('
                 f'{self.f!r}, {self.state.ingr!r}\n{self.history!r})')
 
@@ -109,10 +108,8 @@ class Node:
         for spell_id in self.state.spells:
             spell = actions[spell_id]
             new_ingr = spell.ingr.apply(self.state.ingr)
-            # print(f"New ingr {new_ingr}", file=sys.stderr, flush=True)
             if new_ingr.is_valid():
                 copied_spells = self.state.spells - {spell_id}
-                # debug(copied_spells[i])
                 expanded.append(Node(State(new_ingr, copied_spells, self.state.tome),
                                      new_f, self.getHistoryWithActionId(spell_id)))
         # learn new spells
@@ -134,10 +131,8 @@ class Node:
             copied_spells = frozenset(s.id for s in spells)
             expanded.append(Node(State(self.state.ingr, copied_spells, self.state.tome),
                                  new_f, self.getHistoryWithActionId(REST_ACTION.id)))
-        # debug(f"Expanded {self} to {expanded}")
         return expanded
 
-# seed=-4572190914680882200
 def search(state, targets):
     found = {}
     visited = set()
@@ -158,7 +153,6 @@ def search(state, targets):
 
         n_level_nodes+=1
         if node.state in visited:
-            # debug(f"Already visited state {node.state}")
             continue
 
         curr_time=timeit.default_timer()
@@ -183,7 +177,6 @@ def search(state, targets):
 def possible_recipe():
     for recipe in recipes:
         new_score = recipe.ingr.apply(my_score)
-        # print(f"New score {new_score}", file=sys.stderr, flush=True)
         if new_score.is_valid():
             return recipe.id
     return None
@@ -193,7 +186,6 @@ def valid_spell():
         if not spell.castable:
             continue
         new_score = spell.ingr.apply(my_score)
-        # print(f"New score {new_score}", file=sys.stderr, flush=True)
         if new_score.is_valid():
             return spell.id
     return REST_ACTION.id
@@ -222,7 +214,6 @@ def best():
     debug(f"max ratio {ratios[max_id]} has recipe id {max_id}")
     best_node = shortest_paths[max_id]
     action_id = best_node.history[0] if len(best_node.history) > 0 else max_id
-    debug(f"Action id is {action_id}")
     return action_id
 
 
@@ -269,8 +260,6 @@ while True:
             recipes.append(action)
         elif action_type == 'CAST':
             spells.append(action)
-        # elif action_type == 'LEARN':
-            # tome_spells.append(Spell(action_id, action_type, ingr, price, castable))
 
     # for a in actions.values():
     #     debug(a)

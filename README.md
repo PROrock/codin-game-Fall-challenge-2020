@@ -7,3 +7,5 @@ python main.py < game1.txt
 python -m cProfile -s time main.py < game1.txt
 
 game4 je seed=-3957822701512067100
+
+nejaky seed # seed=-4572190914680882200
