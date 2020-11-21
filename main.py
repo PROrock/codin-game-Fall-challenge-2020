@@ -98,8 +98,12 @@ class Node:
         new_ingr = self.state.ingr.apply(target.ingr)
         return new_ingr.is_valid()
 
+    def getHistoryWithActionId(self, action_id):
+        return copy.copy(self.history) + [action_id] if self.f == 1 else self.history
+
     def expand(self):
         expanded = []
+        new_f = self.f+1
         # recipes - not needed - cannot help me with another recipe
         # spells
         for spell_id in self.state.spells:
@@ -109,8 +113,8 @@ class Node:
             if new_ingr.is_valid():
                 copied_spells = self.state.spells - {spell_id}
                 # debug(copied_spells[i])
-                expanded.append(Node(State(new_ingr, copied_spells, self.state.tome), 
-                                    self.f+1, copy.copy(self.history) + [spell_id]))
+                expanded.append(Node(State(new_ingr, copied_spells, self.state.tome),
+                                     new_f, self.getHistoryWithActionId(spell_id)))
         # learn new spells
         for i, tome_id in enumerate(self.state.tome):
             if i > self.state.ingr.ingr[0]:
@@ -123,13 +127,13 @@ class Node:
             copied_tome = copy.copy(self.state.tome)
             copied_tome.remove(tome_id)
             expanded.append(Node(State(new_ingr, copied_spells, copied_tome),
-                                self.f+1, copy.copy(self.history) + [tome_id]))
+                                 new_f, self.getHistoryWithActionId(tome_id)))
 
         # rest
         if len(self.state.spells) < len(spells):
             copied_spells = frozenset(s.id for s in spells)
             expanded.append(Node(State(self.state.ingr, copied_spells, self.state.tome),
-                                 self.f+1, copy.copy(self.history) + [REST_ACTION.id]))
+                                 new_f, self.getHistoryWithActionId(REST_ACTION.id)))
         # debug(f"Expanded {self} to {expanded}")
         return expanded
 
