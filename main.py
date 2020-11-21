@@ -75,7 +75,7 @@ class Action:
     def to_output(self):
         return "REST" if self.kind == "REST" else f"{self.kind} {self.id}"
     def __eq__(self, other):
-        raise NotImplementedError
+        return self.id == other.id
     def __hash__(self):
         raise NotImplementedError
 
