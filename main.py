@@ -149,51 +149,47 @@ class Node:
         return expanded
 
 # seed=-4572190914680882200
-class Search:
-    def __init__(self, state, targets):
-        self.state = state
-        self.targets = targets
+def search(state, targets):
+    found = {}
+    visited = set()
+    curr_level = 1
+    n_level_nodes = 0
+    q = deque([Node(state, 1, [])])
 
-    def search(self):
-        found = {}
-        visited = set()
-        curr_level = 1
-        n_level_nodes = 0
-        q = deque([Node(self.state, 1, [])])
+    while len(q) > 0:
+        node = q.popleft() ## take first element -> breadth-first
+        if node.f > curr_level:
+            # debug(f"{curr_level}: {n_level_nodes} processed")
+            curr_level = node.f
+            n_level_nodes = 0
+            # so it ends sometime - just for profiling
+            # if node.f > MAX_LEVEL:
+            #     debug(f"{node.f} is already MAX_LEVEL. Quitting.")
+            #     return found
 
-        while len(q) > 0:
-            node = q.popleft() ## take first element -> breadth-first
-            if node.f > curr_level:
-                # debug(f"{curr_level}: {n_level_nodes} processed")
-                curr_level = node.f
-                n_level_nodes = 0
-                # so it ends sometime - just for profiling
-                # if node.f > MAX_LEVEL:
-                #     return found
+        n_level_nodes+=1
+        if node.state in visited:
+            # debug(f"Already visited state {node.state}")
+            continue
 
-            n_level_nodes+=1
-            if node.state in visited:
-                # debug(f"Already visited state {node.state}")
-                continue
+        curr_time=timeit.default_timer()
+        if (curr_time-start_time) > TIME_THRES:
+            debug(f"Time's up! Current level: {curr_level}")
+            found[TIMEOUT_KEY] = TIMEOUT_KEY
+            return found
 
-            curr_time=timeit.default_timer()
-            if (curr_time-start_time) > TIME_THRES:
-                debug(f"Time's up! Current level: {curr_level}")
-                found[TIMEOUT_KEY] = TIMEOUT_KEY
-                return found
-
-            for target in self.targets:
-                # todo consider just removing done goal from the targets, might be slightly quicker
-                if node.satisfies(target) and target.id not in found.keys():
-                    debug(f"Satisfied node: {node}")
-                    found[target.id] = node
-                    if len(found) == len(self.targets):
-                        return found
-            expanded = node.expand()
-            q.extend(expanded) ## put at the end
-            visited.add(node.state)
-        debug("Cannot find a way to do some recipe :-(")
-        return found
+        for target in targets:
+            # todo consider just removing done goal from the targets, might be slightly quicker
+            if node.satisfies(target) and target.id not in found.keys():
+                debug(f"Satisfied node: {node}")
+                found[target.id] = node
+                if len(found) == len(targets):
+                    return found
+        expanded = node.expand()
+        q.extend(expanded) ## put at the end
+        visited.add(node.state)
+    debug("Cannot find a way to do some recipe :-(")
+    return found
 
 def possible_recipe():
     for recipe in recipes:
@@ -221,7 +217,7 @@ def valid_spell():
 def best():
     tome = [a.id for a in actions.values() if a.kind == "LEARN"]
     tome.sort(key=lambda id:actions[id].tome_index)
-    shortest_paths = Search(State(Ingr(my_score.ingr), frozenset([s.id for s in spells if s.castable]), tome), recipes).search()
+    shortest_paths = search(State(Ingr(my_score.ingr), frozenset([s.id for s in spells if s.castable]), tome), recipes)
 
     if not shortest_paths or TIMEOUT_KEY in shortest_paths.keys():
         if len(spells) < MAX_SPELL_SIZE:
