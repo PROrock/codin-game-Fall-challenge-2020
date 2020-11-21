@@ -22,6 +22,15 @@ class Ingr:
         return Ingr(inventory)
     def is_valid(self):
         return all(i>=0 for i in self.ingr) and sum(self.ingr) <= 10
+    def is_applied_valid(self, other):
+        s = 0
+        for i, j in zip(self.ingr, other.ingr):
+            sum_ij = i+j
+            if sum_ij < 0:
+                return False
+            s += sum_ij
+        return True
+
     def __eq__(self, other):
         return self.ingr == other.ingr
     def __hash__(self):
@@ -94,8 +103,7 @@ class Node:
                 f'{self.f!r}, {self.state.ingr!r}\n{self.history!r})')
 
     def satisfies(self, target):
-        new_ingr = self.state.ingr.apply(target.ingr)
-        return new_ingr.is_valid()
+        return self.state.ingr.is_applied_valid(target.ingr)
 
     def getHistoryWithActionId(self, action_id):
         return copy.copy(self.history) + [action_id] if self.f == 1 else self.history
@@ -162,11 +170,11 @@ def search(state, targets):
             return found
 
         for target in targets:
-            # todo consider just removing done goal from the targets, might be slightly quicker
-            if node.satisfies(target) and target.id not in found.keys():
+            if node.satisfies(target):
                 debug(f"Satisfied node: {node}")
                 found[target.id] = node
-                if len(found) == len(targets):
+                targets.remove(target)
+                if len(targets) == 0:
                     return found
         expanded = node.expand()
         q.extend(expanded) ## put at the end
