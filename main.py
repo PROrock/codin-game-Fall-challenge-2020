@@ -151,6 +151,7 @@ class Node:
         return expanded
 
 def search(state, targets):
+    targets = copy.copy(targets)
     found = {}
     visited = set()
     curr_level = 1
