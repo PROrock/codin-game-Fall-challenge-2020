@@ -23,9 +23,9 @@ class Ingr:
     def is_valid(self):
         return all((i>=0 for i in self.ingr)) and sum(self.ingr) <= 10
     def __eq__(self, other):
-        return self.__dict__ == other.__dict__
+        return self.ingr == other.ingr
     def __hash__(self):
-        return hash((val for _,val in self.__dict__))
+        return hash(tuple(self.ingr))
     def __repr__(self):
         return f"{self.ingr}"
 
@@ -35,7 +35,7 @@ class Action:
         self.id = id
         self.kind = kind
         self.ingr = ingr
-        self.price = price 
+        self.price = price
         self.castable = castable
         self.repeatable = repeatable
         self.tome_index = tome_index
@@ -63,12 +63,10 @@ class Action:
 
     def to_output(self):
         return "REST" if self.kind == "REST" else f"{self.kind} {self.id}"
-    
     def __eq__(self, other):
-        return (isinstance(other, self.__class__)
-            and self.__dict__ == other.__dict__)
+        raise NotImplementedError
     def __hash__(self):
-        return hash((val for _,val in self.__dict__))
+        raise NotImplementedError
 
 
 REST_ACTION = Action(-1, "REST", [0,0,0,0], 0, False, False, -1, 0)
@@ -90,17 +88,15 @@ class Spell(Action):
 class State:
     def __init__(self, ingr, spells, tome):
         self.ingr = ingr
-        # self.recipes = recipes
         self.spells = spells  # non-casted spell ids
         self.tome = tome
     def __repr__(self):
         return (f'{self.__class__.__name__}('
                 f'{self.ingr!r}, \nspells={self.spells!r})\ntome={self.tome}')
     def __eq__(self, other):
-        # return self.ingr == other.ingr and self.spells == other.spells and self.tome == other.tome
-        return self.__dict__ == other.__dict__
+        return self.ingr == other.ingr and self.spells == other.spells and self.tome == other.tome
     def __hash__(self):
-        return hash((val for _,val in self.__dict__))
+        return hash((self.ingr, self.spells, tuple(self.tome)))
 
 class Node:
     def __init__(self, state, f, history):
@@ -126,8 +122,7 @@ class Node:
             new_ingr = spell.ingr.apply(self.state.ingr)
             # print(f"New ingr {new_ingr}", file=sys.stderr, flush=True)
             if new_ingr.is_valid():
-                copied_spells = copy.copy(self.state.spells)
-                copied_spells.remove(spell_id) 
+                copied_spells = self.state.spells - {spell_id}
                 # debug(copied_spells[i])
                 expanded.append(Node(State(new_ingr, copied_spells, self.state.tome), 
                                     self.f+1, copy.copy(self.history) + [spell_id]))
@@ -138,9 +133,8 @@ class Node:
             new_ingr = Ingr([actions[tome_id].tax_count-i,0,0,0]).apply(self.state.ingr)
             # todo ignoring my adding to tax_count now (I can increase it with my actions)
             # todo: the excess is discarded. manually update new_ingr to max 10
-            
-            copied_spells = copy.copy(self.state.spells)
-            copied_spells.add(tome_id) 
+
+            copied_spells = self.state.spells | {tome_id}
             copied_tome = copy.copy(self.state.tome)
             copied_tome.remove(tome_id)
             expanded.append(Node(State(new_ingr, copied_spells, copied_tome),
@@ -148,7 +142,7 @@ class Node:
 
         # rest
         if len(self.state.spells) < len(spells):
-            copied_spells = {s.id for s in spells}
+            copied_spells = frozenset(s.id for s in spells)
             expanded.append(Node(State(self.state.ingr, copied_spells, self.state.tome),
                                  self.f+1, copy.copy(self.history) + [REST_ACTION.id]))
         # debug(f"Expanded {self} to {expanded}")
@@ -227,7 +221,7 @@ def valid_spell():
 def best():
     tome = [a.id for a in actions.values() if a.kind == "LEARN"]
     tome.sort(key=lambda id:actions[id].tome_index)
-    shortest_paths = Search(State(Ingr(my_score.ingr), {s.id for s in spells if s.castable}, tome), recipes).search()
+    shortest_paths = Search(State(Ingr(my_score.ingr), frozenset([s.id for s in spells if s.castable]), tome), recipes).search()
 
     if not shortest_paths or TIMEOUT_KEY in shortest_paths.keys():
         if len(spells) < MAX_SPELL_SIZE:
