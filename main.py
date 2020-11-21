@@ -21,7 +21,7 @@ class Ingr:
         inventory = list(map(add, other.ingr, self.ingr))
         return Ingr(inventory)
     def is_valid(self):
-        return all((i>=0 for i in self.ingr)) and sum(self.ingr) <= 10
+        return all(i>=0 for i in self.ingr) and sum(self.ingr) <= 10
     def __eq__(self, other):
         return self.ingr == other.ingr
     def __hash__(self):
@@ -40,13 +40,6 @@ class Action:
         self.repeatable = repeatable
         self.tome_index = tome_index
         self.tax_count = tax_count
-
-    # def apply(self, score):
-        # inventory = list(map(add, score.ingr, self.ingr) )
-        # return Action(-1, None, inventory, score.price + self.price, False, False)
-
-    # def is_valid(self):
-        # return all((i>=0 for i in self.ingr)) and sum(self.ingr) <= 10
 
     def __repr__(self):
         return (f'{self.__class__.__name__[0]}('
@@ -75,14 +68,6 @@ REST_ACTION = Action(-1, "REST", [0,0,0,0], 0, False, False, -1, 0)
 class Recipe(Action):
     def __init__(self, id, ingr, price):
         super().__init__(id, "BREW", ingr, price, False, False, -1, 0)
-
-class Spell(Action):
-    def __init__(self, id, kind, ingr, price, castable, repeatable):
-        super().__init__(id, kind, ingr, price, castable, repeatable, -1, 0)
-        self.castable = castable 
-        self.repeatable = repeatable
-    # def __repr__(self):
-        # return f"{super().__repr__()}, cast={self.castable}"
 
 
 class State:
@@ -274,11 +259,12 @@ while True:
         repeatable = repeatable != "0"
 
         ingr = Ingr([delta_0,delta_1,delta_2,delta_3])
-        actions[action_id] = Action(action_id, action_type, ingr, price, castable, repeatable, tome_index, tax_count)
+        action = Action(action_id, action_type, ingr, price, castable, repeatable, tome_index, tax_count)
+        actions[action_id] = action
         if action_type == 'BREW':
-            recipes.append(Recipe(action_id, ingr, price))
+            recipes.append(action)
         elif action_type == 'CAST':
-            spells.append(Spell(action_id, action_type, ingr, price, castable, repeatable))
+            spells.append(action)
         # elif action_type == 'LEARN':
             # tome_spells.append(Spell(action_id, action_type, ingr, price, castable))
 
