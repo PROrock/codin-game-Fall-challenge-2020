@@ -20,16 +20,25 @@ class Ingr:
     def apply(self, other):
         inventory = list(map(add, other.ingr, self.ingr))
         return Ingr(inventory)
-    def is_valid(self):
-        return all(i>=0 for i in self.ingr) and sum(self.ingr) <= 10
-    def is_applied_valid(self, other):
+    # def is_valid(self):
+    #     return all(i>=0 for i in self.ingr) and sum(self.ingr) <= 10
+    def is_applied_nonnegative(self, other):
+        for i, j in zip(self.ingr, other.ingr):
+            if i + j < 0:
+                return False
+        return True
+    def apply2(self, other):
         s = 0
+        l = []
         for i, j in zip(self.ingr, other.ingr):
             sum_ij = i+j
             if sum_ij < 0:
-                return False
+                return None
             s += sum_ij
-        return True
+            l.append(sum_ij)
+        if s > 10:
+            return None
+        return Ingr(l)
 
     def __eq__(self, other):
         return self.ingr == other.ingr
@@ -103,7 +112,7 @@ class Node:
                 f'{self.f!r}, {self.state.ingr!r}\n{self.history!r})')
 
     def satisfies(self, target):
-        return self.state.ingr.is_applied_valid(target.ingr)
+        return self.state.ingr.is_applied_nonnegative(target.ingr)
 
     def getHistoryWithActionId(self, action_id):
         return copy.copy(self.history) + [action_id] if self.f == 1 else self.history
@@ -115,8 +124,8 @@ class Node:
         # spells
         for spell_id in self.state.spells:
             spell = actions[spell_id]
-            new_ingr = spell.ingr.apply(self.state.ingr)
-            if new_ingr.is_valid():
+            new_ingr = spell.ingr.apply2(self.state.ingr)
+            if new_ingr is not None:
                 copied_spells = self.state.spells - {spell_id}
                 expanded.append(Node(State(new_ingr, copied_spells, self.state.tome),
                                      new_f, self.getHistoryWithActionId(spell_id)))
@@ -184,8 +193,8 @@ def search(state, targets):
 
 def possible_recipe():
     for recipe in recipes:
-        new_score = recipe.ingr.apply(my_score)
-        if new_score.is_valid():
+        new_score = recipe.ingr.apply2(my_score)
+        if new_score is not None:
             return recipe.id
     return None
 
@@ -193,8 +202,8 @@ def valid_spell():
     for spell in spells:
         if not spell.castable:
             continue
-        new_score = spell.ingr.apply(my_score)
-        if new_score.is_valid():
+        new_score = spell.ingr.apply2(my_score)
+        if new_score is not None:
             return spell.id
     return REST_ACTION.id
 
