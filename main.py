@@ -197,7 +197,7 @@ def valid_spell():
     for spell in spells:
         if not spell.castable:
             continue
-        new_score = spell.ingr.apply2(my_score)
+        new_score = spell.ingr.apply2(my_score.ingr)
         if new_score is not None:
             return spell.id
     return REST_ACTION.id
@@ -210,8 +210,19 @@ def valid_spell():
 def best():
     tome = [a.id for a in actions.values() if a.kind == "LEARN"]
     tome.sort(key=lambda id:actions[id].tome_index)
-    shortest_paths = search(State(Ingr(my_score.ingr), frozenset(s.id for s in spells if s.castable), tome), recipes)
 
+    # add target 0011 if not already satisfied, then 0022 - is that enough?
+    targets = recipes
+    dummy_recipe = Action('X', "DUMMY", Ingr([0, 0, -1, -1]), 0, 0, 0, 0, 0)
+    if not my_score.ingr.is_applied_nonnegative(dummy_recipe.ingr):
+        targets.append(dummy_recipe)
+    else:
+        dummy_recipe = Action('X', "DUMMY", Ingr([0, 0, -2, -2]), 0, 0, 0, 0, 0)
+        if not my_score.ingr.is_applied_nonnegative(dummy_recipe.ingr):
+            targets.append(dummy_recipe)
+    shortest_paths = search(State(my_score.ingr, frozenset(s.id for s in spells if s.castable), tome), targets)
+
+    shortest_paths.pop('X', None) # delete node for recipe X if exists
     if not shortest_paths:
         if len(spells) <= MAX_SPELL_SIZE:
             free_tome = tome[0]
@@ -280,11 +291,11 @@ while True:
 
 
     score_line = [int(j) for j in input().split()]
-    # debug(" ".join(score_line))
-    my_score = Recipe(-1, score_line[:4], score_line[4])
+    # debug(" ".join(map(str, score_line)))
+    my_score = Recipe(-1, Ingr(score_line[:4]), score_line[4])
     score_line = [int(j) for j in input().split()]
-    # debug(" ".join(score_line))
-    # opp_score = Recipe(-1, score_line[:4], score_line[4])
+    # debug(" ".join(map(str, score_line)))
+    # opp_score = Recipe(-1, Ingr(score_line[:4]), score_line[4])
     # for i in range(2):
     #     # inv_0: tier-0 ingredients in inventory
     #     # score: amount of rupees
