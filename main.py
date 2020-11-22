@@ -9,6 +9,7 @@ MAX_LEVEL = 20
 # 40ms in second fraction (hopefully)
 TIME_THRES = 42*0.001
 TIMEOUT_KEY = -6
+INIT_LEARN_SESSION = 6
 MAX_SPELL_SIZE = 11
 MAX_DEPTH_TO_LEARN=3
 
@@ -229,6 +230,9 @@ def best_tome_to_learn():
 #     ratios = [r.price/node.f for r, node in zip(recipes, shortest_paths)]
 #     return min(enumerate(shortest_paths), key=lambda i:ratios[i]).history[0]
 def best():
+    if iTurn <= INIT_LEARN_SESSION:
+        return (best_tome_to_learn(), 1)
+
     tome = list(tome_spell_ids)
     tome.sort(key=lambda id:actions[id].tome_index)
 
@@ -267,9 +271,10 @@ def best():
     action_tuple = best_node.history if best_node.history is not None else (best_id, 1) # if history is None, then we can already do the recipe -> do it!
     return action_tuple
 
-
+iTurn = 0
 # game loop
 while True:
+    iTurn += 1
     recipes = []
     spells = []
     tome_spell_ids = set()
