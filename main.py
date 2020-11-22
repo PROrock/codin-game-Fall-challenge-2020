@@ -7,7 +7,7 @@ import time
 
 MAX_LEVEL = 20
 # 40ms in second fraction (hopefully)
-TIME_THRES = 42*0.001
+TIME_THRES = 44*0.001
 TIMEOUT_KEY = -6
 MAX_SPELL_SIZE = 13
 
@@ -167,16 +167,16 @@ def search(state, targets):
             # if node.f > MAX_LEVEL:
             #     debug(f"{node.f} is already MAX_LEVEL. Quitting.")
             #     return found
-
         # n_level_nodes+=1
-        if node.state in visited:
-            continue
 
         curr_time=time.perf_counter()
         if (curr_time-start_time) > TIME_THRES:
             debug(f"Time's up! Current level: {curr_level}")
             found[TIMEOUT_KEY] = TIMEOUT_KEY
             return found
+
+        if node.state in visited:
+            continue
 
         for target in targets:
             if node.satisfies(target):
