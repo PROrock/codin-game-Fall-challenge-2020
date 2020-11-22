@@ -7,7 +7,7 @@ import time
 
 MAX_LEVEL = 20
 # 40ms in second fraction (hopefully)
-TIME_THRES = 45*0.001
+TIME_THRES = 44*0.001
 TIMEOUT_KEY = -6
 MAX_SPELL_SIZE = 17
 
@@ -155,21 +155,21 @@ def search(state, targets):
     found = {}
     visited = set()
     curr_level = 1
-    n_level_nodes = 0
+    # n_level_nodes = 0
     q = deque([Node(state, 1, [])])
 
-    while len(q) > 0:
+    while q:
         node = q.popleft() ## take first element -> breadth-first
         if node.f > curr_level:
             # debug(f"{curr_level}: {n_level_nodes} processed")
             curr_level = node.f
-            n_level_nodes = 0
+            # n_level_nodes = 0
             # so it ends sometime - just for profiling
             # if node.f > MAX_LEVEL:
             #     debug(f"{node.f} is already MAX_LEVEL. Quitting.")
             #     return found
 
-        n_level_nodes+=1
+        # n_level_nodes+=1
         if node.state in visited:
             continue
 
