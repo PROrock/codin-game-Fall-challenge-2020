@@ -9,7 +9,8 @@ MAX_LEVEL = 20
 # 40ms in second fraction (hopefully)
 TIME_THRES = 42*0.001
 TIMEOUT_KEY = -6
-MAX_SPELL_SIZE = 13
+MAX_SPELL_SIZE = 11
+MAX_DEPTH_TO_LEARN=3
 
 def debug(text):
     print(text, file=sys.stderr, flush=True)
@@ -130,18 +131,20 @@ class Node:
                 expanded.append(Node(State(new_ingr, copied_spells, self.state.tome),
                                      new_f, self.getHistoryWithActionId(spell_id)))
         # learn new spells
-        for i, tome_id in enumerate(self.state.tome):
-            if i > self.state.ingr.ingr[0]:
-                continue # cannot learn, not enough tier-0 ingredients
-            new_ingr = Ingr([actions[tome_id].tax_count-i,0,0,0]).apply(self.state.ingr)
-            # todo ignoring my adding to tax_count now (I can increase it with my actions)
-            # todo: the excess is discarded. manually update new_ingr to max 10
+        # not making any sense to learn in the last n moves -> learn at the beginning of the planned path!
+        if self.f <= MAX_DEPTH_TO_LEARN:
+            for i, tome_id in enumerate(self.state.tome):
+                if i > self.state.ingr.ingr[0]:
+                    continue # cannot learn, not enough tier-0 ingredients
+                new_ingr = Ingr([actions[tome_id].tax_count-i,0,0,0]).apply(self.state.ingr)
+                # todo ignoring my adding to tax_count now (I can increase it with my actions)
+                # todo: the excess is discarded. manually update new_ingr to max 10
 
-            copied_spells = self.state.spells | {tome_id}
-            copied_tome = copy.copy(self.state.tome)
-            copied_tome.remove(tome_id)
-            expanded.append(Node(State(new_ingr, copied_spells, copied_tome),
-                                 new_f, self.getHistoryWithActionId(tome_id)))
+                copied_spells = self.state.spells | {tome_id}
+                copied_tome = copy.copy(self.state.tome)
+                copied_tome.remove(tome_id)
+                expanded.append(Node(State(new_ingr, copied_spells, copied_tome),
+                                     new_f, self.getHistoryWithActionId(tome_id)))
 
         # rest
         if len(self.state.spells) < len(spells):
