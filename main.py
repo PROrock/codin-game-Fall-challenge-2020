@@ -266,7 +266,7 @@ while True:
     action_count = int(input())  # the number of spells and recipes in play
     start_time = time.perf_counter()
     # debug(f"start time={start_time}")
-    for i in range(action_count):
+    for _ in range(action_count):
         # action_id: the unique ID of this spell or recipe
         # action_type: in the first league: BREW; later: CAST, OPPONENT_CAST, LEARN, BREW
         # delta_0: tier-0 ingredient change
@@ -285,9 +285,7 @@ while True:
         delta_1 = int(delta_1)
         delta_2 = int(delta_2)
         delta_3 = int(delta_3)
-        # todo - just lazy approximation now
-        urgency_bonus = 1 if i == 0 else 0
-        price = int(price) + urgency_bonus
+        price = int(price) # price includes the urgency bonus!
         tome_index = int(tome_index)
         tax_count = int(tax_count)
         castable = castable != "0"
