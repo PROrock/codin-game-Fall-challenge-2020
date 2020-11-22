@@ -155,8 +155,9 @@ class Node:
                                      new_f, self.getHistoryWithActionId(tome_id)))
 
         # rest
-        if len(self.state.spells) < len(spells):
-            copied_spells = frozenset(s.id for s in spells)
+        learned_tomes = tome_spell_ids - set(self.state.tome)
+        if len(self.state.spells) < len(spells) + len(learned_tomes):
+            copied_spells = frozenset(s.id for s in spells) | learned_tomes
             expanded.append(Node(State(self.state.ingr, copied_spells, self.state.tome),
                                  new_f, self.getHistoryWithActionId(REST_ACTION.id)))
         return expanded
