@@ -19,19 +19,18 @@ class Ingr:
     def __init__(self, ingr):
         self.ingr = ingr
     def apply(self, other):
-        inventory = list(map(add, other.ingr, self.ingr))
-        return Ingr(inventory)
+        return Ingr(list(map(add, other.ingr, self.ingr)))
     # def is_valid(self):
     #     return all(i>=0 for i in self.ingr) and sum(self.ingr) <= 10
     def is_applied_nonnegative(self, other):
-        for i, j in zip(self.ingr, other.ingr):
+        for i, j in zip(self.ingr[::-1], other.ingr[::-1]):
             if i + j < 0:
                 return False
         return True
     def apply2(self, other):
         s = 0
         l = []
-        for i, j in zip(self.ingr, other.ingr):
+        for i, j in zip(self.ingr[::-1], other.ingr[::-1]):
             sum_ij = i+j
             if sum_ij < 0:
                 return None
