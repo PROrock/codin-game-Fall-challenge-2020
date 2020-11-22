@@ -1,13 +1,13 @@
 import copy
-import timeit
 from collections import deque
 from operator import add
 
 import sys
+import time
 
 MAX_LEVEL = 20
 # 40ms in second fraction (hopefully)
-TIME_THRES = 40*0.001
+TIME_THRES = 45*0.001
 TIMEOUT_KEY = -6
 MAX_SPELL_SIZE = 17
 
@@ -173,7 +173,7 @@ def search(state, targets):
         if node.state in visited:
             continue
 
-        curr_time=timeit.default_timer()
+        curr_time=time.perf_counter()
         if (curr_time-start_time) > TIME_THRES:
             debug(f"Time's up! Current level: {curr_level}")
             found[TIMEOUT_KEY] = TIMEOUT_KEY
@@ -237,13 +237,14 @@ def best():
 
 # game loop
 while True:
-    start_time = timeit.default_timer()
     recipes = []
     spells = []
     tome_spells = []
     actions = {REST_ACTION.id:REST_ACTION}
 
     action_count = int(input())  # the number of spells and recipes in play
+    start_time = time.perf_counter()
+    # debug(f"start time={start_time}")
     for i in range(action_count):
         # action_id: the unique ID of this spell or recipe
         # action_type: in the first league: BREW; later: CAST, OPPONENT_CAST, LEARN, BREW
