@@ -289,7 +289,7 @@ while True:
     my_score = Recipe(-1, score_line[:4], score_line[4])
     score_line = [int(j) for j in input().split()]
     # debug(score_line)
-    opp_score = Recipe(-1, score_line[:4], score_line[4])
+    # opp_score = Recipe(-1, score_line[:4], score_line[4])
     # for i in range(2):
     #     # inv_0: tier-0 ingredients in inventory
     #     # score: amount of rupees
