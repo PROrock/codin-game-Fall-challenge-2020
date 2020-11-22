@@ -7,9 +7,9 @@ import time
 
 MAX_LEVEL = 20
 # 40ms in second fraction (hopefully)
-TIME_THRES = 44*0.001
+TIME_THRES = 42*0.001
 TIMEOUT_KEY = -6
-MAX_SPELL_SIZE = 16
+MAX_SPELL_SIZE = 13
 
 def debug(text):
     print(text, file=sys.stderr, flush=True)
@@ -218,7 +218,7 @@ def best():
     shortest_paths = search(State(Ingr(my_score.ingr), frozenset([s.id for s in spells if s.castable]), tome), recipes)
 
     if not shortest_paths or TIMEOUT_KEY in shortest_paths.keys():
-        if len(spells) < MAX_SPELL_SIZE:
+        if len(spells) <= MAX_SPELL_SIZE:
             free_tome = tome[0]
             return free_tome
         else:
