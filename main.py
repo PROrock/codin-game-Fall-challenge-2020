@@ -102,7 +102,7 @@ class State:
         return hash((self.ingr, self.spells, tuple(self.tome)))
 
 class Node:
-    def __init__(self, state, f, history):
+    def __init__(self, state, f=1, history=None):
         self.state = state
         self.f = f
         self.history = history
@@ -114,7 +114,7 @@ class Node:
         return self.state.ingr.is_applied_nonnegative(target.ingr)
 
     def getHistoryWithActionId(self, action_id):
-        return copy.copy(self.history) + [action_id] if self.f == 1 else self.history
+        return action_id if self.f == 1 else self.history
 
     def expand(self):
         expanded = []
@@ -155,7 +155,7 @@ def search(state, targets):
     visited = set()
     curr_level = 1
     # n_level_nodes = 0
-    q = deque([Node(state, 1, [])])
+    q = deque([Node(state)])
 
     while q:
         node = q.popleft() ## take first element -> breadth-first
@@ -230,7 +230,7 @@ def best():
     max_id = max((r_id for r_id in ratios.keys()), key=lambda id:ratios[id])
     debug(f"max ratio {ratios[max_id]} has recipe id {max_id}")
     best_node = shortest_paths[max_id]
-    action_id = best_node.history[0] if len(best_node.history) > 0 else max_id
+    action_id = best_node.history or max_id
     return action_id
 
 
