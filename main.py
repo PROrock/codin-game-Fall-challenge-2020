@@ -115,6 +115,7 @@ class Node:
 
     def getHistoryWithActionId(self, action_id):
         return action_id if self.f == 1 else self.history
+        # return copy.copy(self.history) + [action_id] if self.f == 1 else self.history
 
     def expand(self):
         expanded = []
@@ -171,8 +172,7 @@ def search(state, targets):
 
         curr_time=time.perf_counter()
         if (curr_time-start_time) > TIME_THRES:
-            debug(f"Time's up! Current level: {curr_level}")
-            found[TIMEOUT_KEY] = TIMEOUT_KEY
+            debug(f"Time's up! Current level: {curr_level}. Found node: {len(found)}")
             return found
 
         if node.state in visited:
@@ -180,7 +180,7 @@ def search(state, targets):
 
         for target in targets:
             if node.satisfies(target):
-                debug(f"Satisfied: {node}")
+                # debug(f"Satisfied rec {target.id}: {node}")
                 found[target.id] = node
                 targets.remove(target)
                 if len(targets) == 0:
@@ -191,13 +191,6 @@ def search(state, targets):
     debug("Cannot find a way to do some recipe :-(")
     return found
 
-def possible_recipe():
-    for recipe in recipes:
-        new_score = recipe.ingr.apply2(my_score)
-        if new_score is not None:
-            return recipe.id
-    return None
-
 def valid_spell():
     for spell in spells:
         if not spell.castable:
@@ -207,7 +200,7 @@ def valid_spell():
             return spell.id
     return REST_ACTION.id
 
-# slow, innefficient to run the search from the beginningm when it is the same space to search
+# slow, inefficient to run the search from the beginning when it is the same space to search
 # def best():
 #     shortest_paths = [Search(State(my_score, recipes, {s.id for s in spells if s.castable}), r).search() for r in recipes]
 #     ratios = [r.price/node.f for r, node in zip(recipes, shortest_paths)]
@@ -215,15 +208,14 @@ def valid_spell():
 def best():
     tome = [a.id for a in actions.values() if a.kind == "LEARN"]
     tome.sort(key=lambda id:actions[id].tome_index)
-    shortest_paths = search(State(Ingr(my_score.ingr), frozenset([s.id for s in spells if s.castable]), tome), recipes)
+    shortest_paths = search(State(Ingr(my_score.ingr), frozenset(s.id for s in spells if s.castable), tome), recipes)
 
-    if not shortest_paths or TIMEOUT_KEY in shortest_paths.keys():
+    if not shortest_paths:
         if len(spells) <= MAX_SPELL_SIZE:
             free_tome = tome[0]
             return free_tome
         else:
-            recipe_id = possible_recipe()
-            return recipe_id if recipe_id is not None else valid_spell()
+            return valid_spell()
 
     # select shortest recipe available
     best_id = min((r_id for r_id in shortest_paths.keys()), key=lambda id:(shortest_paths[id].f, -actions[id].price))
