@@ -129,6 +129,15 @@ class Node:
                 copied_spells = self.state.spells - {spell_id}
                 expanded.append(Node(State(new_ingr, copied_spells, self.state.tome),
                                      new_f, self.getHistoryWithActionId(spell_id)))
+                if spell_id in repeatable_spells:
+                    for iRepeated in range(2, 4):
+                        new_ingr = spell.ingr.apply2(new_ingr)
+                        if new_ingr is None:
+                            break
+                        # debug(f"repeating spell {spell_id}")
+                        expanded.append(Node(State(new_ingr, copied_spells, self.state.tome),
+                                                 new_f, self.getHistoryWithActionId(spell_id, iRepeated)))
+
         # learn new spells
         # not making any sense to learn in the last n moves -> learn at the beginning of the planned path!
         if self.f <= MAX_DEPTH_TO_LEARN and (self.f==1 or self.history in tome_spell_ids):
@@ -293,6 +302,7 @@ while True:
         elif action_type == 'LEARN':
             tome_spell_ids.add(action_id)
 
+    repeatable_spells = frozenset((a.id for a in actions.values() if a.repeatable))
     # for a in actions.values():
     #     debug(a)
 
