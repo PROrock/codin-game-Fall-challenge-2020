@@ -131,8 +131,9 @@ class Node:
                                      new_f, self.getHistoryWithActionId(spell_id)))
         # learn new spells
         # not making any sense to learn in the last n moves -> learn at the beginning of the planned path!
-        if self.f <= MAX_DEPTH_TO_LEARN:
-            for i in range(min(self.state.ingr.ingr[0], len(self.state.tome))):
+        if self.f <= MAX_DEPTH_TO_LEARN and (self.f== 1 or self.history in tome_spell_ids):
+            # forbid learning cheaper recipes (we should have learn them in previous round)
+            for i in range(self.f-1, min(self.state.ingr.ingr[0], len(self.state.tome))):
                 tome_id = self.state.tome[i]
                 new_ingr = Ingr([actions[tome_id].tax_count-i,0,0,0]).apply(self.state.ingr)
                 # todo ignoring my adding to tax_count now (I can increase it with my actions)
@@ -207,7 +208,7 @@ def valid_spell():
 #     ratios = [r.price/node.f for r, node in zip(recipes, shortest_paths)]
 #     return min(enumerate(shortest_paths), key=lambda i:ratios[i]).history[0]
 def best():
-    tome = [a.id for a in actions.values() if a.kind == "LEARN"]
+    tome = list(tome_spell_ids)
     tome.sort(key=lambda id:actions[id].tome_index)
 
     # add target 0011 if not already satisfied, then 0022 - is that enough?
@@ -249,7 +250,7 @@ def best():
 while True:
     recipes = []
     spells = []
-    tome_spells = []
+    tome_spell_ids = set()
     actions = {REST_ACTION.id:REST_ACTION}
 
     action_count = int(input())  # the number of spells and recipes in play
@@ -289,6 +290,8 @@ while True:
             recipes.append(action)
         elif action_type == 'CAST':
             spells.append(action)
+        elif action_type == 'LEARN':
+            tome_spell_ids.add(action_id)
 
     # for a in actions.values():
     #     debug(a)
