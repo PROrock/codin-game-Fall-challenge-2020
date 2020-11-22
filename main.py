@@ -39,6 +39,11 @@ class Ingr:
         if s > 10:
             return None
         return Ingr(l[::-1])
+    def fair_price(self):
+        return sum(i*inv for i,inv in enumerate(self.ingr, 1))
+    def heuristic_price(self):
+        return sum(i**1.5*inv for i,inv in enumerate(self.ingr, 1))
+        # return sum(i*inv for i,inv in enumerate(self.ingr[1:], 2))
 
     def __eq__(self, other):
         return self.ingr == other.ingr
@@ -212,6 +217,12 @@ def valid_spell():
             return spell.id
     return REST_ACTION.id
 
+def best_tome_to_learn():
+    tome_actions=(actions[t_id] for t_id in tome_spell_ids)
+    # fair_prices={t_id:actions[t_id].ingr.fair_price() for t_id in tome_spell_ids if }
+    fair_prices={t.id:t.ingr.fair_price()-t.tome_index for t in tome_actions if my_score.ingr.ingr[0] >= t.tome_index}
+    return max(fair_prices.keys(), key=lambda id:fair_prices[id])
+
 # slow, inefficient to run the search from the beginning when it is the same space to search
 # def best():
 #     shortest_paths = [Search(State(my_score, recipes, {s.id for s in spells if s.castable}), r).search() for r in recipes]
@@ -223,7 +234,7 @@ def best():
 
     # add target 0011 if not already satisfied, then 0022 - is that enough?
     targets = recipes
-    dummy_recipe = Action('X', "DUMMY", Ingr([0, 0, -2, -2]), 0, 0, 0, 0, 0)
+    dummy_recipe = Action('X', "DUMMY", Ingr([0, 0, -3, -3]), 0, 0, 0, 0, 0)
     if not my_score.ingr.is_applied_nonnegative(dummy_recipe.ingr):
         targets.append(dummy_recipe)
     # else:
@@ -237,8 +248,9 @@ def best():
         shortest_paths.pop('X', None) # delete node for recipe X if exists (and it is not the only node found)
     if not shortest_paths:
         if len(spells) <= MAX_SPELL_SIZE:
-            free_tome = tome[0]
-            return (free_tome, 1)
+            # best_tome = tome[0]
+            best_tome = best_tome_to_learn()
+            return (best_tome, 1)
         else:
             return (valid_spell(), 1)
 
@@ -304,7 +316,11 @@ while True:
     repeatable_spells = frozenset((a.id for a in actions.values() if a.repeatable))
     # for a in actions.values():
     #     debug(a)
-
+    # for s in spells:
+    #     debug(f"{s}: {s.ingr.fair_price()}, {s.ingr.heuristic_price()}")
+    # for s in actions.values():
+    #     if s.kind == "LEARN":
+    #         debug(f"{s}: {s.ingr.fair_price()}, {s.ingr.heuristic_price()}")
 
     score_line = [int(j) for j in input().split()]
     # debug(" ".join(map(str, score_line)))
