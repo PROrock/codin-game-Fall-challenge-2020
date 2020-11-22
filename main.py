@@ -222,7 +222,9 @@ def best():
             targets.append(dummy_recipe)
     shortest_paths = search(State(my_score.ingr, frozenset(s.id for s in spells if s.castable), tome), targets)
 
-    shortest_paths.pop('X', None) # delete node for recipe X if exists
+    found_nodes = len(shortest_paths)
+    if found_nodes != 1:
+        shortest_paths.pop('X', None) # delete node for recipe X if exists (and it is not the only node found)
     if not shortest_paths:
         if len(spells) <= MAX_SPELL_SIZE:
             free_tome = tome[0]
@@ -230,12 +232,15 @@ def best():
         else:
             return valid_spell()
 
-    # select shortest recipe available
-    best_id = min((r_id for r_id in shortest_paths.keys()), key=lambda id:(shortest_paths[id].f, -actions[id].price))
-    # best ratio
-    # ratios = {r.id:(r.price/shortest_paths[r.id].f) for r in recipes if r.id in shortest_paths.keys()}
-    # best_id = max((r_id for r_id in ratios.keys()), key=lambda id:ratios[id])
-    # debug(f"max ratio {ratios[best_id]} has recipe id {best_id}")
+    if found_nodes == 1:
+        best_id = next(iter(shortest_paths))
+    else:
+        # select shortest recipe available
+        best_id = min((r_id for r_id in shortest_paths.keys()), key=lambda id:(shortest_paths[id].f, -actions[id].price))
+        # best ratio
+        # ratios = {r.id:(r.price/shortest_paths[r.id].f) for r in recipes if r.id in shortest_paths.keys()}
+        # best_id = max((r_id for r_id in ratios.keys()), key=lambda id:ratios[id])
+        # debug(f"max ratio {ratios[best_id]} has recipe id {best_id}")
     best_node = shortest_paths[best_id]
     action_id = best_node.history if best_node.history is not None else best_id # if history is None, then we can already do the recipe -> do it!
     return action_id
