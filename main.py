@@ -136,7 +136,7 @@ class Node:
                             break
                         # debug(f"repeating spell {spell_id}")
                         expanded.append(Node(State(new_ingr, copied_spells, self.state.tome),
-                                                 new_f, self.getHistoryWithActionId(spell_id, iRepeated)))
+                                             new_f, self.getHistoryWithActionId(spell_id, iRepeated)))
 
         # learn new spells
         # not making any sense to learn in the last n moves -> learn at the beginning of the planned path!
@@ -145,7 +145,7 @@ class Node:
             for i in range(self.f-1, min(self.state.ingr.ingr[0], len(self.state.tome))):
                 tome_id = self.state.tome[i]
                 new_ingr = Ingr([actions[tome_id].tax_count-i,0,0,0]).apply(self.state.ingr)
-                # todo ignoring my adding to tax_count now (I can increase it with my actions)
+                # ignoring my adding to tax_count now (I can increase it with my actions) - this I just forbid...
                 # todo: the excess is discarded. manually update new_ingr to max 10
 
                 copied_spells = self.state.spells | {tome_id}
@@ -171,9 +171,9 @@ def search(state, targets):
 
     while q:
         node = q.popleft() ## take first element -> breadth-first
-        if node.f > curr_level:
+        # if node.f > curr_level:
             # debug(f"{curr_level}: {n_level_nodes} processed")
-            curr_level = node.f
+            # curr_level = node.f
             # n_level_nodes = 0
             # so it ends sometime - just for profiling
             # if node.f > MAX_LEVEL:
@@ -183,7 +183,7 @@ def search(state, targets):
 
         curr_time=time.perf_counter()
         if (curr_time-start_time) > TIME_THRES:
-            debug(f"Time's up! Current level: {curr_level}. Found node: {len(found)}")
+            debug(f"Time's up! Current level: {node.f}. Found node: {len(found)}")
             return found
 
         if node.state in visited:
