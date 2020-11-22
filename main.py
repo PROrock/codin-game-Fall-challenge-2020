@@ -94,7 +94,7 @@ class State:
         self.spells = spells  # non-casted spell ids
         self.tome = tome
     def __repr__(self):
-        return (f'{self.__class__.__name__}('
+        return (f'State('
                 f'{self.ingr!r}, \nspells={self.spells!r})\ntome={self.tome}')
     def __eq__(self, other):
         return self.ingr == other.ingr and self.spells == other.spells and self.tome == other.tome
@@ -108,8 +108,7 @@ class Node:
         self.history = history
 
     def __repr__(self):
-        return (f'{self.__class__.__name__}('
-                f'{self.f!r}, {self.state.ingr!r}\n{self.history!r})')
+        return (f'Node({self.f!r}, {self.state.ingr!r}{self.history!r})')
 
     def satisfies(self, target):
         return self.state.ingr.is_applied_nonnegative(target.ingr)
@@ -181,7 +180,7 @@ def search(state, targets):
 
         for target in targets:
             if node.satisfies(target):
-                debug(f"Satisfied node: {node}")
+                debug(f"Satisfied: {node}")
                 found[target.id] = node
                 targets.remove(target)
                 if len(targets) == 0:
