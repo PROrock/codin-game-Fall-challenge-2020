@@ -225,12 +225,14 @@ def best():
             recipe_id = possible_recipe()
             return recipe_id if recipe_id is not None else valid_spell()
 
-
-    ratios = {r.id:(r.price/shortest_paths[r.id].f) for r in recipes if r.id in shortest_paths.keys()}
-    max_id = max((r_id for r_id in ratios.keys()), key=lambda id:ratios[id])
-    debug(f"max ratio {ratios[max_id]} has recipe id {max_id}")
-    best_node = shortest_paths[max_id]
-    action_id = best_node.history or max_id
+    # select shortest recipe available
+    best_id = min((r_id for r_id in shortest_paths.keys()), key=lambda id:(shortest_paths[id].f, -actions[id].price))
+    # best ratio
+    # ratios = {r.id:(r.price/shortest_paths[r.id].f) for r in recipes if r.id in shortest_paths.keys()}
+    # best_id = max((r_id for r_id in ratios.keys()), key=lambda id:ratios[id])
+    # debug(f"max ratio {ratios[best_id]} has recipe id {best_id}")
+    best_node = shortest_paths[best_id]
+    action_id = best_node.history or best_id # if history is None, then we can already do the recipe -> do it!
     return action_id
 
 
