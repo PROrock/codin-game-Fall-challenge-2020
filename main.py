@@ -7,7 +7,7 @@ import time
 
 MAX_LEVEL = 20
 # 40ms in second fraction (hopefully)
-TIME_THRES = 44*0.001
+TIME_THRES = 42*0.001
 TIMEOUT_KEY = -6
 MAX_SPELL_SIZE = 13
 
