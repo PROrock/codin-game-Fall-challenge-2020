@@ -213,13 +213,13 @@ def best():
 
     # add target 0011 if not already satisfied, then 0022 - is that enough?
     targets = recipes
-    dummy_recipe = Action('X', "DUMMY", Ingr([0, 0, -1, -1]), 0, 0, 0, 0, 0)
+    dummy_recipe = Action('X', "DUMMY", Ingr([0, 0, -2, -2]), 0, 0, 0, 0, 0)
     if not my_score.ingr.is_applied_nonnegative(dummy_recipe.ingr):
         targets.append(dummy_recipe)
-    else:
-        dummy_recipe = Action('X', "DUMMY", Ingr([0, 0, -2, -2]), 0, 0, 0, 0, 0)
-        if not my_score.ingr.is_applied_nonnegative(dummy_recipe.ingr):
-            targets.append(dummy_recipe)
+    # else:
+    #     dummy_recipe = Action('X', "DUMMY", Ingr([0, 0, -2, -2]), 0, 0, 0, 0, 0)
+    #     if not my_score.ingr.is_applied_nonnegative(dummy_recipe.ingr):
+    #         targets.append(dummy_recipe)
     shortest_paths = search(State(my_score.ingr, frozenset(s.id for s in spells if s.castable), tome), targets)
 
     found_nodes = len(shortest_paths)
