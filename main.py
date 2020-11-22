@@ -38,7 +38,7 @@ class Ingr:
             l.append(sum_ij)
         if s > 10:
             return None
-        return Ingr(l)
+        return Ingr(l[::-1])
 
     def __eq__(self, other):
         return self.ingr == other.ingr
@@ -131,7 +131,7 @@ class Node:
                                      new_f, self.getHistoryWithActionId(spell_id)))
         # learn new spells
         # not making any sense to learn in the last n moves -> learn at the beginning of the planned path!
-        if self.f <= MAX_DEPTH_TO_LEARN and (self.f== 1 or self.history in tome_spell_ids):
+        if self.f <= MAX_DEPTH_TO_LEARN and (self.f==1 or self.history in tome_spell_ids):
             # forbid learning cheaper recipes (we should have learn them in previous round)
             for i in range(self.f-1, min(self.state.ingr.ingr[0], len(self.state.tome))):
                 tome_id = self.state.tome[i]
@@ -228,9 +228,9 @@ def best():
     if not shortest_paths:
         if len(spells) <= MAX_SPELL_SIZE:
             free_tome = tome[0]
-            return free_tome
+            return (free_tome, 1)
         else:
-            return valid_spell()
+            return (valid_spell(), 1)
 
     if found_nodes == 1:
         best_id = next(iter(shortest_paths))
