@@ -133,9 +133,8 @@ class Node:
         # learn new spells
         # not making any sense to learn in the last n moves -> learn at the beginning of the planned path!
         if self.f <= MAX_DEPTH_TO_LEARN:
-            for i, tome_id in enumerate(self.state.tome):
-                if i > self.state.ingr.ingr[0]:
-                    continue # cannot learn, not enough tier-0 ingredients
+            for i in range(min(self.state.ingr.ingr[0], len(self.state.tome))):
+                tome_id = self.state.tome[i]
                 new_ingr = Ingr([actions[tome_id].tax_count-i,0,0,0]).apply(self.state.ingr)
                 # todo ignoring my adding to tax_count now (I can increase it with my actions)
                 # todo: the excess is discarded. manually update new_ingr to max 10
