@@ -113,8 +113,8 @@ class Node:
     def satisfies(self, target):
         return self.state.ingr.is_applied_nonnegative(target.ingr)
 
-    def getHistoryWithActionId(self, action_id):
-        return action_id if self.f == 1 else self.history
+    def getHistoryWithActionId(self, action_id, repeatTimes=1):
+        return (action_id, repeatTimes) if self.f == 1 else self.history
         # return copy.copy(self.history) + [action_id] if self.f == 1 else self.history
 
     def expand(self):
@@ -242,8 +242,8 @@ def best():
         # best_id = max((r_id for r_id in ratios.keys()), key=lambda id:ratios[id])
         # debug(f"max ratio {ratios[best_id]} has recipe id {best_id}")
     best_node = shortest_paths[best_id]
-    action_id = best_node.history if best_node.history is not None else best_id # if history is None, then we can already do the recipe -> do it!
-    return action_id
+    action_tuple = best_node.history if best_node.history is not None else (best_id, 1) # if history is None, then we can already do the recipe -> do it!
+    return action_tuple
 
 
 # game loop
@@ -309,12 +309,12 @@ while True:
     #     inv_0, inv_1, inv_2, inv_3, score = [int(j) for j in input().split()]
 
 
-    best_action_id = best()
-    best_action = actions[best_action_id]
+    best_action_tuple = best()
+    best_action = actions[best_action_tuple[0]]
     # debug(f"best action is {best_action}")
     # for a in actions.items():
         # debug(a)
-    output = best_action.to_output()
+    output = best_action.to_output() + f" {best_action_tuple[1]}"
 
     # in the first league: BREW <id> | WAIT; later: BREW <id> | CAST <id> [<times>] | LEARN <id> | REST | WAIT
     print(output)
