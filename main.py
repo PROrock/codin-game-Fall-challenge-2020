@@ -226,7 +226,7 @@ def best():
     # best_id = max((r_id for r_id in ratios.keys()), key=lambda id:ratios[id])
     # debug(f"max ratio {ratios[best_id]} has recipe id {best_id}")
     best_node = shortest_paths[best_id]
-    action_id = best_node.history or best_id # if history is None, then we can already do the recipe -> do it!
+    action_id = best_node.history if best_node.history is not None else best_id # if history is None, then we can already do the recipe -> do it!
     return action_id
 
 
@@ -280,10 +280,10 @@ while True:
 
 
     score_line = [int(j) for j in input().split()]
-    # debug(score_line)
+    # debug(" ".join(score_line))
     my_score = Recipe(-1, score_line[:4], score_line[4])
     score_line = [int(j) for j in input().split()]
-    # debug(score_line)
+    # debug(" ".join(score_line))
     # opp_score = Recipe(-1, score_line[:4], score_line[4])
     # for i in range(2):
     #     # inv_0: tier-0 ingredients in inventory
