@@ -10,6 +10,6 @@ game4 je seed=-3957822701512067100
 
 nejaky seed # seed=-4572190914680882200
 
-seed na co se soustredit -8351015045391697900 (demonstruje, jak dementne kouzlim - i nahodny shuffle by pomohl!)
+seed na co se soustredit -8351015045391697900 (demonstruje, jak spatne kouzlim - i nahodny shuffle by pomohl!)
 
 [recipes and spells](https://github.com/CodinGame/FallChallenge2020/blob/main/src/main/java/com/codingame/game/Deck.java)
